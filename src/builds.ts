@@ -14,7 +14,7 @@ export interface BuildTemplate {
 // 16.13 時点のアイテム名で記述。Data Dragon で名前解決される。
 export const BUILDS: Record<Archetype, BuildTemplate> = {
   adc: {
-    startItems: ["Doran's Blade", 'Health Potion'],
+    startItems: ["Doran's Bow", 'Health Potion'],
     defaultBoots: "Berserker's Greaves",
     bootsVsAD: 'Plated Steelcaps',
     bootsVsAP: "Mercury's Treads",

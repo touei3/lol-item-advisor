@@ -31,6 +31,7 @@ export interface ChampionEntry {
 
 // よく使う部品
 const AD_START = ["Doran's Blade", 'Health Potion']
+const ADC_START = ["Doran's Bow", 'Health Potion'] // ADCはドランボウ始動
 const AP_START = ["Doran's Ring", 'Health Potion']
 const TANK_START = ["Doran's Shield", 'Health Potion']
 const SUP_START = ['World Atlas', 'Health Potion']
@@ -169,29 +170,29 @@ export const CHAMPIONS: Record<string, ChampionEntry> = {
   Swain: { lanes: ['MID', 'SUPPORT', 'BOT'], build: { start: AP_START, boots: "Sorcerer's Shoes", core: ['Liandry\'s Torment', "Rylai's Crystal Scepter", "Rabadon's Deathcap"], late: ['Void Staff', 'Spirit Visage'] } },
 
   // ===== BOT (ADC) =====
-  Aphelios: { lanes: ['BOT'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Infinity Edge', "Lord Dominik's Regards", 'Bloodthirster'], late: ['Phantom Dancer', 'Guardian Angel'] } },
-  Ashe: { lanes: ['BOT', 'SUPPORT'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Infinity Edge', "Lord Dominik's Regards"], late: ["Runaan's Hurricane", 'Bloodthirster'] } },
-  Caitlyn: { lanes: ['BOT'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['The Collector', 'Infinity Edge', 'Rapid Firecannon'], late: ["Lord Dominik's Regards", 'Bloodthirster'] } },
-  Draven: { lanes: ['BOT'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['The Collector', 'Infinity Edge', 'Bloodthirster'], late: ["Lord Dominik's Regards", "Youmuu's Ghostblade"] } },
+  Aphelios: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Infinity Edge', "Lord Dominik's Regards", 'Bloodthirster'], late: ['Phantom Dancer', 'Guardian Angel'] } },
+  Ashe: { lanes: ['BOT', 'SUPPORT'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Infinity Edge', "Lord Dominik's Regards"], late: ["Runaan's Hurricane", 'Bloodthirster'] } },
+  Caitlyn: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['The Collector', 'Infinity Edge', 'Rapid Firecannon'], late: ["Lord Dominik's Regards", 'Bloodthirster'] } },
+  Draven: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['The Collector', 'Infinity Edge', 'Bloodthirster'], late: ["Lord Dominik's Regards", "Youmuu's Ghostblade"] } },
   Ezreal: { lanes: ['BOT'], build: { start: ['Tear of the Goddess', 'Health Potion'], boots: 'Ionian Boots of Lucidity', core: ['Manamune', 'Trinity Force', 'Serylda\'s Grudge'], late: ['Bloodthirster', 'Guardian Angel'] } },
-  Jhin: { lanes: ['BOT'], build: { start: AD_START, boots: 'Boots of Swiftness', core: ['The Collector', 'Rapid Firecannon', 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Bloodthirster'] } },
-  Jinx: { lanes: ['BOT'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Infinity Edge', "Lord Dominik's Regards"], late: ["Runaan's Hurricane", 'Bloodthirster'] } },
-  Kaisa: { lanes: ['BOT'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Guinsoo\'s Rageblade', 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Bloodthirster'] } },
-  Kalista: { lanes: ['BOT'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Blade of The Ruined King', "Runaan's Hurricane", 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Guinsoo\'s Rageblade'] } },
-  KogMaw: { lanes: ['BOT'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Guinsoo\'s Rageblade', 'Kraken Slayer', 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Bloodthirster'] } },
-  Lucian: { lanes: ['BOT'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Essence Reaver', 'Navori Flickerblade', 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Bloodthirster'] } },
-  MissFortune: { lanes: ['BOT'], build: { start: AD_START, boots: 'Boots of Swiftness', core: ['The Collector', 'Infinity Edge', "Lord Dominik's Regards"], late: ['Bloodthirster', 'Rapid Firecannon'], coreReasons: { 'The Collector': '序盤の火力と処刑効果が強いコア', 'Infinity Edge': 'Rのクリ火力を最大化', "Lord Dominik's Regards": '装甲貫通＋対HP' } } },
-  Nilah: { lanes: ['BOT'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Blade of The Ruined King', 'Infinity Edge', "Sterak's Gage"], late: ["Death's Dance", 'Guardian Angel'] } },
-  Samira: { lanes: ['BOT'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['The Collector', 'Infinity Edge', 'Bloodthirster'], late: ["Lord Dominik's Regards", 'Guardian Angel'] } },
-  Sivir: { lanes: ['BOT'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Infinity Edge', "Lord Dominik's Regards"], late: ["Runaan's Hurricane", 'Bloodthirster'] } },
-  Smolder: { lanes: ['BOT', 'MID'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Guinsoo\'s Rageblade', 'Infinity Edge', "Rabadon's Deathcap"], late: ['Void Staff', "Lord Dominik's Regards"] } },
-  Tristana: { lanes: ['BOT', 'MID'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Infinity Edge', "Lord Dominik's Regards"], late: ['Rapid Firecannon', 'Bloodthirster'] } },
-  Twitch: { lanes: ['BOT', 'JUNGLE'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', "Runaan's Hurricane", 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Bloodthirster'] } },
-  Varus: { lanes: ['BOT', 'MID'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Infinity Edge', "Lord Dominik's Regards"], late: ["Runaan's Hurricane", 'Bloodthirster'] } },
-  Vayne: { lanes: ['BOT', 'TOP'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Blade of The Ruined King', 'Guinsoo\'s Rageblade', 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Guardian Angel'] } },
-  Xayah: { lanes: ['BOT'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Infinity Edge', "Lord Dominik's Regards"], late: ["Runaan's Hurricane", 'Bloodthirster'] } },
-  Zeri: { lanes: ['BOT'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Yun Tal Wildarrows', 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Phantom Dancer'] } },
-  Yunara: { lanes: ['BOT'], build: { start: AD_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Infinity Edge', "Lord Dominik's Regards"], late: ['Bloodthirster', 'Phantom Dancer'] } },
+  Jhin: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Boots of Swiftness', core: ['The Collector', 'Rapid Firecannon', 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Bloodthirster'] } },
+  Jinx: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Infinity Edge', "Lord Dominik's Regards"], late: ["Runaan's Hurricane", 'Bloodthirster'] } },
+  Kaisa: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Guinsoo\'s Rageblade', 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Bloodthirster'] } },
+  Kalista: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Blade of The Ruined King', "Runaan's Hurricane", 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Guinsoo\'s Rageblade'] } },
+  KogMaw: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Guinsoo\'s Rageblade', 'Kraken Slayer', 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Bloodthirster'] } },
+  Lucian: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Essence Reaver', 'Navori Flickerblade', 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Bloodthirster'] } },
+  MissFortune: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Boots of Swiftness', core: ['The Collector', 'Infinity Edge', "Lord Dominik's Regards"], late: ['Bloodthirster', 'Rapid Firecannon'], coreReasons: { 'The Collector': '序盤の火力と処刑効果が強いコア', 'Infinity Edge': 'Rのクリ火力を最大化', "Lord Dominik's Regards": '装甲貫通＋対HP' } } },
+  Nilah: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Blade of The Ruined King', 'Infinity Edge', "Sterak's Gage"], late: ["Death's Dance", 'Guardian Angel'] } },
+  Samira: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['The Collector', 'Infinity Edge', 'Bloodthirster'], late: ["Lord Dominik's Regards", 'Guardian Angel'] } },
+  Sivir: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Infinity Edge', "Lord Dominik's Regards"], late: ["Runaan's Hurricane", 'Bloodthirster'] } },
+  Smolder: { lanes: ['BOT', 'MID'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Guinsoo\'s Rageblade', 'Infinity Edge', "Rabadon's Deathcap"], late: ['Void Staff', "Lord Dominik's Regards"] } },
+  Tristana: { lanes: ['BOT', 'MID'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Infinity Edge', "Lord Dominik's Regards"], late: ['Rapid Firecannon', 'Bloodthirster'] } },
+  Twitch: { lanes: ['BOT', 'JUNGLE'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', "Runaan's Hurricane", 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Bloodthirster'] } },
+  Varus: { lanes: ['BOT', 'MID'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Infinity Edge', "Lord Dominik's Regards"], late: ["Runaan's Hurricane", 'Bloodthirster'] } },
+  Vayne: { lanes: ['BOT', 'TOP'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Blade of The Ruined King', 'Guinsoo\'s Rageblade', 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Guardian Angel'] } },
+  Xayah: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Infinity Edge', "Lord Dominik's Regards"], late: ["Runaan's Hurricane", 'Bloodthirster'] } },
+  Zeri: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Yun Tal Wildarrows', 'Infinity Edge'], late: ["Lord Dominik's Regards", 'Phantom Dancer'] } },
+  Yunara: { lanes: ['BOT'], build: { start: ADC_START, boots: 'Berserker\'s Greaves', core: ['Kraken Slayer', 'Infinity Edge', "Lord Dominik's Regards"], late: ['Bloodthirster', 'Phantom Dancer'] } },
 
   // ===== SUPPORT =====
   Alistar: { lanes: ['SUPPORT'], build: { start: SUP_START, boots: 'Mercury\'s Treads', core: ['Locket of the Iron Solari', "Knight's Vow", 'Zeke\'s Convergence'], late: ['Thornmail', 'Spirit Visage'] } },
