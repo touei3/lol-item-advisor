@@ -64,13 +64,24 @@ function ItemCard({
 }
 
 export function BuildResult({ version, rec }: { version: string; rec: Recommendation }) {
-  const { classification, profile, startItems, buildOrder, extraOptions } = rec
+  const { classification, profile, curated, startItems, buildOrder, extraOptions } = rec
 
   return (
     <div className="flex flex-col gap-5">
       {/* 自分の型 */}
       <div className="rounded-xl bg-slate-800/40 p-4 ring-1 ring-slate-700">
-        <h3 className="mb-1 text-sm font-bold text-sky-300">あなたのタイプ</h3>
+        <div className="mb-1 flex items-center gap-2">
+          <h3 className="text-sm font-bold text-sky-300">あなたのタイプ</h3>
+          {curated ? (
+            <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-300">
+              個別ビルド
+            </span>
+          ) : (
+            <span className="rounded bg-slate-500/20 px-1.5 py-0.5 text-[10px] text-slate-300">
+              汎用ビルド（型ベース）
+            </span>
+          )}
+        </div>
         <p className="text-sm text-slate-300">
           <span className="font-semibold text-white">
             {ARCHETYPE_LABEL[classification.archetype]}

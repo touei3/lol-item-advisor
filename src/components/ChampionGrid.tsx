@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { getLanes, LANE_LABEL, LANE_ORDER, type Lane } from '../championData'
 import { imageUrl } from '../ddragon'
 import type { DDragonChampion } from '../types'
 
@@ -9,50 +10,53 @@ interface Props {
   onPick: (champ: DDragonChampion) => void
 }
 
-// 実際のLoL選択画面と同じロール/クラス別フィルタ（Data Dragon の tags に対応）
-type RoleFilter = 'all' | 'Fighter' | 'Tank' | 'Mage' | 'Assassin' | 'Marksman' | 'Support'
+// 実際のLoL選択画面と同じレーン別フィルタ
+type LaneFilter = 'all' | Lane
 
-const ROLES: { key: RoleFilter; label: string; icon: string }[] = [
-  { key: 'all', label: '全て', icon: '◆' },
-  { key: 'Fighter', label: 'ファイター', icon: '⚔️' },
-  { key: 'Tank', label: 'タンク', icon: '🛡️' },
-  { key: 'Mage', label: 'メイジ', icon: '🔮' },
-  { key: 'Assassin', label: 'アサシン', icon: '🗡️' },
-  { key: 'Marksman', label: 'マークスマン', icon: '🏹' },
-  { key: 'Support', label: 'サポート', icon: '✨' },
-]
+const LANE_ICON: Record<Lane, string> = {
+  TOP: '⬆️',
+  JUNGLE: '🌳',
+  MID: '🛣️',
+  BOT: '🏹',
+  SUPPORT: '➕',
+}
 
 export function ChampionGrid({ version, champions, disabledIds, onPick }: Props) {
   const [q, setQ] = useState('')
-  const [role, setRole] = useState<RoleFilter>('all')
+  const [lane, setLane] = useState<LaneFilter>('all')
 
   const filtered = useMemo(() => {
     const k = q.trim().toLowerCase()
     return champions.filter((c) => {
-      if (role !== 'all' && !c.tags.includes(role)) return false
+      if (lane !== 'all' && !getLanes(c.id, c.tags).includes(lane)) return false
       if (!k) return true
       return c.name.toLowerCase().includes(k) || c.id.toLowerCase().includes(k)
     })
-  }, [q, role, champions])
+  }, [q, lane, champions])
+
+  const tabs: { key: LaneFilter; label: string; icon: string }[] = [
+    { key: 'all', label: '全て', icon: '◆' },
+    ...LANE_ORDER.map((l) => ({ key: l as LaneFilter, label: LANE_LABEL[l], icon: LANE_ICON[l] })),
+  ]
 
   return (
     <div className="flex flex-col gap-3">
-      {/* ロール/クラス別フィルタ */}
+      {/* レーン別フィルタ */}
       <div className="flex flex-wrap gap-1.5">
-        {ROLES.map((r) => {
-          const active = role === r.key
+        {tabs.map((t) => {
+          const active = lane === t.key
           return (
             <button
-              key={r.key}
-              onClick={() => setRole(r.key)}
+              key={t.key}
+              onClick={() => setLane(t.key)}
               className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition ${
                 active
                   ? 'bg-sky-600 text-white ring-1 ring-sky-400'
                   : 'bg-slate-800 text-slate-300 ring-1 ring-slate-700 hover:bg-slate-700'
               }`}
             >
-              <span aria-hidden>{r.icon}</span>
-              {r.label}
+              <span aria-hidden>{t.icon}</span>
+              {t.label}
             </button>
           )
         })}
@@ -68,10 +72,10 @@ export function ChampionGrid({ version, champions, disabledIds, onPick }: Props)
 
       <div className="flex items-center justify-between text-[11px] text-slate-500">
         <span>{filtered.length} 体</span>
-        {(role !== 'all' || q) && (
+        {(lane !== 'all' || q) && (
           <button
             onClick={() => {
-              setRole('all')
+              setLane('all')
               setQ('')
             }}
             className="text-slate-400 hover:text-slate-200"

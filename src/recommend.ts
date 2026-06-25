@@ -1,4 +1,5 @@
 import { BUILDS } from './builds'
+import { CHAMPIONS } from './championData'
 import { classify } from './classify'
 import { buildThreatProfile, counterItems } from './counter'
 import type { DDragonData } from './ddragon'
@@ -13,6 +14,7 @@ import type {
 export interface Recommendation {
   classification: Classification
   profile: ThreatProfile
+  curated: boolean // チャンピオン個別の手入れビルドか（false=型ベースの汎用）
   startItems: RecommendedItem[]
   buildOrder: RecommendedItem[] // ブーツ＋コア＋差し込み（最大6枠）
   extraOptions: RecommendedItem[] // 枠に入りきらなかった対抗候補
@@ -43,21 +45,42 @@ export function recommend(
 ): Recommendation {
   const classification = classify(myChamp)
   const template = BUILDS[classification.archetype]
+  const curatedBuild = CHAMPIONS[myChamp.id]?.build
   const profile = buildThreatProfile(enemies)
 
-  // --- スタートアイテム ---
-  const startItems = template.startItems.map((n) => make(data, n, 'start'))
+  // 個別ビルドがあれば優先、無ければ型ベースの汎用ビルド
+  const startNames = curatedBuild?.start ?? template.startItems
+  const baseBoots = curatedBuild?.boots ?? template.defaultBoots
+  const coreNames = curatedBuild?.core ?? template.core
+  const lateNames = curatedBuild?.late ?? template.late
+  const coreReasons = curatedBuild?.coreReasons ?? template.coreReasons
 
-  // --- ブーツ選択（脅威に応じて差し替え）---
-  let bootsName = template.defaultBoots
-  let bootsReason = '標準のブーツ'
-  if (profile.highCC >= 2 || profile.magicRatio >= 0.6) {
-    bootsName = template.bootsVsAP
-    bootsReason =
-      profile.highCC >= 2 ? '敵のCCが多いためテナシティ重視' : '敵が魔法寄りのため魔法防御ブーツ'
-  } else if (profile.physicalRatio >= 0.6) {
-    bootsName = template.bootsVsAD
-    bootsReason = '敵が物理寄りのため物理防御ブーツ'
+  // --- スタートアイテム ---
+  const startItems = startNames.map((n) => make(data, n, 'start'))
+
+  // --- ブーツ選択 ---
+  // 火力キャリー(ADC/メイジ/アサシン/エンチャンター)は基本ブーツを維持し、防具はアイテムで対応。
+  // 耐久寄り(タンク/ブルーザー)のみ、敵構成に応じて防御ブーツへ差し替える。
+  const tanky =
+    classification.archetype === 'tank' ||
+    classification.archetype === 'tank-support' ||
+    classification.archetype === 'ad-bruiser' ||
+    classification.archetype === 'ap-fighter'
+
+  let bootsName = baseBoots
+  let bootsReason = curatedBuild ? 'このチャンピオンの標準ブーツ' : '標準のブーツ'
+
+  if (tanky) {
+    if (profile.highCC >= 3) {
+      bootsName = template.bootsVsAP // Mercury's Treads
+      bootsReason = '敵のCCが非常に多いためテナシティ重視'
+    } else if (profile.magicRatio >= 0.6 && profile.total >= 2) {
+      bootsName = template.bootsVsAP
+      bootsReason = '敵が魔法寄りのため魔法防御ブーツ'
+    } else if (profile.physicalRatio >= 0.6 && profile.total >= 2) {
+      bootsName = template.bootsVsAD // Plated Steelcaps
+      bootsReason = '敵が物理寄りのため物理防御ブーツ'
+    }
   }
 
   const used = new Set<string>()
@@ -73,8 +96,8 @@ export function recommend(
   push(make(data, bootsName, 'boots', bootsReason))
 
   // --- コア ---
-  for (const n of template.core) {
-    push(make(data, n, 'core', template.coreReasons[n]))
+  for (const n of coreNames) {
+    push(make(data, n, 'core', coreReasons?.[n]))
   }
 
   // --- 対抗アイテム（優先度順）---
@@ -85,23 +108,26 @@ export function recommend(
   const extraOptions: RecommendedItem[] = []
   for (const c of counters) {
     const item = make(data, c.name, 'counter', c.reason)
+    const key = c.name.toLowerCase()
     if (buildOrder.length < TARGET_SLOTS) {
-      if (!push(item)) {
-        // すでにビルドに含まれている場合は無視
-      }
-    } else {
-      const key = c.name.toLowerCase()
-      if (!used.has(key) && !extraOptions.some((e) => e.name.toLowerCase() === key)) {
-        extraOptions.push(item)
-      }
+      push(item)
+    } else if (!used.has(key) && !extraOptions.some((e) => e.name.toLowerCase() === key)) {
+      extraOptions.push(item)
     }
   }
 
   // --- 余り枠を後半候補で埋める ---
-  for (const n of template.late) {
+  for (const n of lateNames) {
     if (buildOrder.length >= TARGET_SLOTS) break
     push(make(data, n, 'late'))
   }
 
-  return { classification, profile, startItems, buildOrder, extraOptions }
+  return {
+    classification,
+    profile,
+    curated: !!curatedBuild,
+    startItems,
+    buildOrder,
+    extraOptions,
+  }
 }
