@@ -9,19 +9,55 @@ interface Props {
   onPick: (champ: DDragonChampion) => void
 }
 
+// 実際のLoL選択画面と同じロール/クラス別フィルタ（Data Dragon の tags に対応）
+type RoleFilter = 'all' | 'Fighter' | 'Tank' | 'Mage' | 'Assassin' | 'Marksman' | 'Support'
+
+const ROLES: { key: RoleFilter; label: string; icon: string }[] = [
+  { key: 'all', label: '全て', icon: '◆' },
+  { key: 'Fighter', label: 'ファイター', icon: '⚔️' },
+  { key: 'Tank', label: 'タンク', icon: '🛡️' },
+  { key: 'Mage', label: 'メイジ', icon: '🔮' },
+  { key: 'Assassin', label: 'アサシン', icon: '🗡️' },
+  { key: 'Marksman', label: 'マークスマン', icon: '🏹' },
+  { key: 'Support', label: 'サポート', icon: '✨' },
+]
+
 export function ChampionGrid({ version, champions, disabledIds, onPick }: Props) {
   const [q, setQ] = useState('')
+  const [role, setRole] = useState<RoleFilter>('all')
 
   const filtered = useMemo(() => {
     const k = q.trim().toLowerCase()
-    if (!k) return champions
-    return champions.filter(
-      (c) => c.name.toLowerCase().includes(k) || c.id.toLowerCase().includes(k),
-    )
-  }, [q, champions])
+    return champions.filter((c) => {
+      if (role !== 'all' && !c.tags.includes(role)) return false
+      if (!k) return true
+      return c.name.toLowerCase().includes(k) || c.id.toLowerCase().includes(k)
+    })
+  }, [q, role, champions])
 
   return (
     <div className="flex flex-col gap-3">
+      {/* ロール/クラス別フィルタ */}
+      <div className="flex flex-wrap gap-1.5">
+        {ROLES.map((r) => {
+          const active = role === r.key
+          return (
+            <button
+              key={r.key}
+              onClick={() => setRole(r.key)}
+              className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition ${
+                active
+                  ? 'bg-sky-600 text-white ring-1 ring-sky-400'
+                  : 'bg-slate-800 text-slate-300 ring-1 ring-slate-700 hover:bg-slate-700'
+              }`}
+            >
+              <span aria-hidden>{r.icon}</span>
+              {r.label}
+            </button>
+          )
+        })}
+      </div>
+
       <input
         autoFocus
         value={q}
@@ -29,7 +65,23 @@ export function ChampionGrid({ version, champions, disabledIds, onPick }: Props)
         placeholder="チャンピオン名で検索…"
         className="w-full rounded-lg bg-slate-800 px-3 py-2 text-sm outline-none ring-1 ring-slate-700 focus:ring-sky-500"
       />
-      <div className="grid max-h-[55vh] grid-cols-[repeat(auto-fill,minmax(64px,1fr))] gap-2 overflow-y-auto pr-1">
+
+      <div className="flex items-center justify-between text-[11px] text-slate-500">
+        <span>{filtered.length} 体</span>
+        {(role !== 'all' || q) && (
+          <button
+            onClick={() => {
+              setRole('all')
+              setQ('')
+            }}
+            className="text-slate-400 hover:text-slate-200"
+          >
+            絞り込みをクリア
+          </button>
+        )}
+      </div>
+
+      <div className="grid max-h-[50vh] grid-cols-[repeat(auto-fill,minmax(64px,1fr))] gap-2 overflow-y-auto pr-1">
         {filtered.map((c) => {
           const disabled = disabledIds?.has(c.id)
           return (
