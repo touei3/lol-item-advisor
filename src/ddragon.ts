@@ -7,9 +7,13 @@ export interface DDragonData {
   version: string
   champions: DDragonChampion[]
   championById: Record<string, DDragonChampion>
+  // 数値キー（"21"など）→ チャンピオン（LCU champ-select 用）
+  championByKey: Record<string, DDragonChampion>
   items: DDragonItem[]
   // 英語名（小文字・記号除去）→ アイテム（ビルド雛形の名前解決用）
   itemByName: Map<string, DDragonItem>
+  // アイテムID → アイテム（Live Client の所持アイテム照合用）
+  itemById: Map<string, DDragonItem>
   // アイテムID → 日本語表示名
   itemNameJa: Map<string, string>
 }
@@ -45,7 +49,11 @@ export async function loadDDragon(): Promise<DDragonData> {
   const champions: DDragonChampion[] = Object.values(champRes.data)
   champions.sort((a, b) => a.name.localeCompare(b.name, 'ja'))
   const championById: Record<string, DDragonChampion> = {}
-  for (const c of champions) championById[c.id] = c
+  const championByKey: Record<string, DDragonChampion> = {}
+  for (const c of champions) {
+    championById[c.id] = c
+    championByKey[c.key] = c
+  }
 
   // 日本語名（ID → 表示名）
   const itemNameJa = new Map<string, string>()
@@ -54,9 +62,11 @@ export async function loadDDragon(): Promise<DDragonData> {
   }
 
   const itemByName = new Map<string, DDragonItem>()
+  const itemById = new Map<string, DDragonItem>()
   const items: DDragonItem[] = []
   for (const [id, raw] of Object.entries<any>(itemEnRes.data)) {
     const it: DDragonItem = { ...raw, id }
+    itemById.set(id, it)
     // サモナーズリフト(11)で購入可能なものだけ対象
     if (!it.gold?.purchasable) continue
     if (it.maps && it.maps['11'] === false) continue
@@ -66,8 +76,30 @@ export async function loadDDragon(): Promise<DDragonData> {
     if (!itemByName.has(key)) itemByName.set(key, it)
   }
 
-  cache = { version, champions, championById, items, itemByName, itemNameJa }
+  cache = { version, champions, championById, championByKey, items, itemByName, itemById, itemNameJa }
   return cache
+}
+
+/** LCU/Live Client のチャンピオン識別子から DDragon チャンピオンを引く */
+export function championFromKey(
+  data: DDragonData,
+  key: number | string,
+): DDragonChampion | undefined {
+  return data.championByKey[String(key)]
+}
+
+/** Live Client の rawChampionName（"game_character_displayname_MissFortune"）→ チャンピオン */
+export function championFromRawName(
+  data: DDragonData,
+  raw: string,
+): DDragonChampion | undefined {
+  const id = raw.split('_').pop() ?? ''
+  // 一部ID表記ゆれ（FiddleSticks 等）を吸収
+  const norm = id.toLowerCase()
+  return (
+    data.championById[id] ??
+    data.champions.find((c) => c.id.toLowerCase() === norm)
+  )
 }
 
 /** ビルド雛形のアイテム名（英語）を Data Dragon の実アイテムに解決 */

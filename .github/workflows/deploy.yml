@@ -25,6 +25,9 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+        env:
+          # Web版のビルドには Electron バイナリ不要（DL省略で高速化）
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:

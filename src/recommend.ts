@@ -131,3 +131,26 @@ export function recommend(
     extraOptions,
   }
 }
+
+export interface NextItemResult {
+  /** 次に買うべき1手（所持済みを飛ばした最初の推奨アイテム）*/
+  next?: RecommendedItem
+  /** ビルド順の各アイテムに所持フラグを付けたもの */
+  order: (RecommendedItem & { owned: boolean })[]
+}
+
+/**
+ * 試合中用：推奨ビルド順と現在の所持アイテムID集合から「次の1手」を割り出す。
+ * 所持済みアイテムは飛ばし、まだ持っていない最初の推奨を next とする。
+ */
+export function computeNextItem(
+  rec: Recommendation,
+  ownedItemIds: Set<string>,
+): NextItemResult {
+  const order = rec.buildOrder.map((it) => ({
+    ...it,
+    owned: !!it.item && ownedItemIds.has(it.item.id),
+  }))
+  const next = order.find((it) => !it.owned)
+  return { next, order }
+}
