@@ -22,7 +22,7 @@ function createWindow() {
     title: 'LoL Item Advisor',
     backgroundColor: '#0a0e14',
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, '../preload/index.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },

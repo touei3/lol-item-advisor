@@ -11,15 +11,16 @@ const common = {
   logLevel: 'info',
 }
 
+// package.json が "type":"module" のため、CJS出力は .cjs 拡張子にする
 await esbuild.build({
   ...common,
   entryPoints: ['electron/main/index.ts'],
-  outfile: 'dist-electron/main/index.js',
+  outfile: 'dist-electron/main/index.cjs',
 })
 await esbuild.build({
   ...common,
   entryPoints: ['electron/preload/index.ts'],
-  outfile: 'dist-electron/preload/index.js',
+  outfile: 'dist-electron/preload/index.cjs',
 })
 
 console.log('✓ electron main/preload built → dist-electron/')

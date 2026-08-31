@@ -19,12 +19,12 @@ const common = {
 const mainCtx = await esbuild.context({
   ...common,
   entryPoints: ['electron/main/index.ts'],
-  outfile: 'dist-electron/main/index.js',
+  outfile: 'dist-electron/main/index.cjs',
 })
 const preloadCtx = await esbuild.context({
   ...common,
   entryPoints: ['electron/preload/index.ts'],
-  outfile: 'dist-electron/preload/index.js',
+  outfile: 'dist-electron/preload/index.cjs',
 })
 await mainCtx.watch()
 await preloadCtx.watch()

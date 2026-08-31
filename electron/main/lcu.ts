@@ -5,10 +5,29 @@ import type { ChampSelectState } from '../../src/live'
 
 // LCU（League Client Update API）: クライアントのローカルREST API。
 // lockfile から port と password を読み、Basic認証でアクセスする。
-const DEFAULT_LOCKFILES = [
+const STATIC_LOCKFILES = [
   'C:/Riot Games/League of Legends/lockfile',
   path.join(process.env.LOCALAPPDATA || '', 'Riot Games/League of Legends/lockfile'),
 ]
+
+// Riot のメタデータからインストール先を自動検出（インストール先が既定と違っても拾える）
+const METADATA_YAMLS = [
+  'C:/ProgramData/Riot Games/Metadata/league_of_legends.live/league_of_legends.live.product_settings.yaml',
+]
+
+function lockfilesFromMetadata(): string[] {
+  const out: string[] = []
+  for (const m of METADATA_YAMLS) {
+    try {
+      const txt = fs.readFileSync(m, 'utf8')
+      const match = txt.match(/product_install_full_path:\s*"?([^"\n]+)"?/)
+      if (match) out.push(path.join(match[1].trim(), 'lockfile'))
+    } catch {
+      // メタデータが無ければ無視
+    }
+  }
+  return out
+}
 
 interface Lock {
   port: string
@@ -16,7 +35,11 @@ interface Lock {
 }
 
 function readLockfile(): Lock | null {
-  const candidates = [process.env.LOL_LOCKFILE, ...DEFAULT_LOCKFILES].filter(Boolean) as string[]
+  const candidates = [
+    process.env.LOL_LOCKFILE,
+    ...lockfilesFromMetadata(),
+    ...STATIC_LOCKFILES,
+  ].filter(Boolean) as string[]
   for (const p of candidates) {
     try {
       const txt = fs.readFileSync(p, 'utf8')
