@@ -64,7 +64,7 @@ function ItemCard({
 }
 
 export function BuildResult({ version, rec }: { version: string; rec: Recommendation }) {
-  const { classification, profile, curated, startItems, buildOrder, extraOptions } = rec
+  const { classification, profile, source, buildMeta, startItems, buildOrder, extraOptions } = rec
 
   return (
     <div className="flex flex-col gap-5">
@@ -72,9 +72,15 @@ export function BuildResult({ version, rec }: { version: string; rec: Recommenda
       <div className="rounded-xl bg-slate-800/40 p-4 ring-1 ring-slate-700">
         <div className="mb-1 flex items-center gap-2">
           <h3 className="text-sm font-bold text-sky-300">あなたのタイプ</h3>
-          {curated ? (
+          {source === 'deeplol' ? (
             <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-300">
-              個別ビルド
+              Deeplol実データ
+              {buildMeta?.winRate != null && ` 勝率${Math.round(buildMeta.winRate * 100)}%`}
+              {buildMeta?.lane && `・${buildMeta.lane}`}
+            </span>
+          ) : source === 'curated' ? (
+            <span className="rounded bg-sky-500/20 px-1.5 py-0.5 text-[10px] text-sky-300">
+              個別ビルド（手書き）
             </span>
           ) : (
             <span className="rounded bg-slate-500/20 px-1.5 py-0.5 text-[10px] text-slate-300">

@@ -39,6 +39,21 @@ export type LiveState =
   | ChampSelectState
   | IngameState
 
+// Deeplol の統計ビルド（main が取得し renderer へ渡す）
+export interface DeeplolBuild {
+  championKey: number
+  laneLabel: string // "Bot" / "Mid" など
+  startIds: number[]
+  bootsId?: number
+  coreIds: number[]
+  meta: {
+    winRate?: number
+    games?: number
+    tier: string
+    version: string
+  }
+}
+
 // preload が公開する API の型（renderer から window.lol で参照）
 export interface LolBridge {
   /** 状態が変わるたびに呼ばれる。解除関数を返す */
@@ -47,4 +62,6 @@ export interface LolBridge {
   getState: () => Promise<LiveState>
   /** モードの切替（実クライアント / モック）*/
   setMock: (on: boolean) => void
+  /** Deeplol の統計ビルドを取得（失敗時 null）*/
+  getBuild: (championKey: number) => Promise<DeeplolBuild | null>
 }

@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'node:path'
 import type { LiveState } from '../../src/live'
+import { fetchBuild } from './deeplol'
 import { fetchChampSelect, isClientRunning } from './lcu'
 import { fetchIngame } from './liveclient'
 import { mockChampSelect, mockIngame } from './mock'
@@ -73,6 +74,7 @@ function startLoop() {
 
 app.whenReady().then(() => {
   ipcMain.handle('lol:getState', () => lastState)
+  ipcMain.handle('lol:getBuild', (_e, championKey: number) => fetchBuild(championKey))
   ipcMain.on('lol:setMock', (_e, on: boolean) => {
     mock = !!on
     mockTick = 0

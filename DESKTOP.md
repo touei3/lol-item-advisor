@@ -12,6 +12,22 @@ Web版（手動選択・GitHub Pages）と推奨エンジンを共有してい�
 | チャンピオン選択 | **LCU API**（`lockfile` 認証, `127.0.0.1:<port>`） | `electron/main/lcu.ts` |
 | 試合中 | **Live Client Data API**（`127.0.0.1:2999`） | `electron/main/liveclient.ts` |
 
+## ビルドデータのソース（Deeplol 統計 ＋ 手書きフォールバック）
+
+デスクトップ版では、ビルドの中身を **Deeplol の統計データ** から取得します（`electron/main/deeplol.ts`）。
+
+- エンドポイント: `https://b2c-api-cdn.deeplol.gg/champion/build`（CDNキャッシュ・要ブラウザUA）
+- main プロセスが**登場したチャンピオン分だけ**取得し、6時間キャッシュ（低頻度アクセス）
+- 取れる情報: スタート/ブーツ/コア購入順（勝率ベース・レーン別）
+- その上に自前の**対抗アイテムエンジン**（敵構成に応じた差し込み）を重ねる
+- **取得失敗・オフライン時は手書きデータ**（`src/championData.ts`）に自動フォールバック
+- 表示バッジで出どころが分かる（`Deeplol実データ` / `個別ビルド(手書き)` / `汎用ビルド`）
+
+⚠ Deeplol は非公式APIのため利用は自己責任。無効化したい場合は環境変数
+`DEEPLOL_DISABLE=1` を付けて起動すると、手書きデータのみで動作します。
+
+> Web版（`src/App.tsx`）はブラウザCORSのため Deeplol を使わず、手書きデータで動作します。
+
 - main プロセス（Node）がローカルAPIをポーリングし、状態を renderer（UI）へ IPC 送信
 - renderer は Web版と同じ推奨エンジン（`src/recommend.ts` ほか）で計算して表示
 - どちらも **自分のPC内で完結**（CORS・スクレイピング規約の問題なし）

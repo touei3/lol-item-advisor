@@ -8,8 +8,28 @@ import {
   type DDragonData,
 } from '../../src/ddragon'
 import { computeNextItem, recommend } from '../../src/recommend'
-import type { LiveState } from '../../src/live'
+import type { DeeplolBuild, LiveState } from '../../src/live'
 import type { DDragonChampion } from '../../src/types'
+
+// Deeplol の統計ビルドを championKey で取得（Electronのbridge経由・失敗時null）
+function useDeeplolBuild(championKey?: number): DeeplolBuild | null {
+  const [build, setBuild] = useState<DeeplolBuild | null>(null)
+  useEffect(() => {
+    let alive = true
+    if (!championKey || !window.lol?.getBuild) {
+      setBuild(null)
+      return
+    }
+    window.lol
+      .getBuild(championKey)
+      .then((b) => alive && setBuild(b))
+      .catch(() => alive && setBuild(null))
+    return () => {
+      alive = false
+    }
+  }, [championKey])
+  return build
+}
 
 export function DesktopApp() {
   const [data, setData] = useState<DDragonData | null>(null)
@@ -118,10 +138,11 @@ function ChampSelectView({
     .map((k) => championFromKey(data, k))
     .filter((c): c is DDragonChampion => !!c)
   const my = state.myChampionKey ? championFromKey(data, state.myChampionKey) : undefined
+  const build = useDeeplolBuild(state.myChampionKey)
 
   const rec = useMemo(
-    () => (my ? recommend(data, my, enemies) : null),
-    [data, my, enemies],
+    () => (my ? recommend(data, my, enemies, build ?? undefined) : null),
+    [data, my, enemies, build],
   )
 
   return (
@@ -157,13 +178,14 @@ function IngameView({
     .map((e) => championFromRawName(data, e.championId))
     .filter((c): c is DDragonChampion => !!c)
   const owned = useMemo(() => new Set(state.me?.itemIds ?? []), [state.me])
+  const build = useDeeplolBuild(my ? Number(my.key) : undefined)
 
   const { rec, next, order } = useMemo(() => {
     if (!my) return { rec: null, next: undefined, order: [] as ReturnType<typeof computeNextItem>['order'] }
-    const r = recommend(data, my, enemies)
+    const r = recommend(data, my, enemies, build ?? undefined)
     const n = computeNextItem(r, owned)
     return { rec: r, next: n.next, order: n.order }
-  }, [data, my, enemies, owned])
+  }, [data, my, enemies, owned, build])
 
   const mm = Math.floor(state.gameTime / 60)
   const ss = String(Math.floor(state.gameTime % 60)).padStart(2, '0')
@@ -176,6 +198,15 @@ function IngameView({
         <div className="flex items-center gap-2">
           <img src={imageUrl(data.version, 'champion', my.image.full)} className="h-8 w-8 rounded" />
           <span className="text-sm font-semibold text-white">{my.name}</span>
+          {rec?.source === 'deeplol' ? (
+            <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[9px] text-emerald-300">
+              Deeplol{rec.buildMeta?.winRate != null && ` ${Math.round(rec.buildMeta.winRate * 100)}%`}
+            </span>
+          ) : (
+            <span className="rounded bg-slate-600/40 px-1.5 py-0.5 text-[9px] text-slate-300">
+              手書き
+            </span>
+          )}
         </div>
         <span className="text-xs text-slate-400">⏱ {mm}:{ss}</span>
       </div>

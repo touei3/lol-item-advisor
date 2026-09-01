@@ -17,6 +17,20 @@ let cb: ((s: LiveState) => void) | null = null
   },
   getState: () => Promise.resolve({ phase: 'idle', message: 'プレビュー' } as LiveState),
   setMock: () => {},
+  // ミスフォーチュン(key=21)だけ Deeplol 実データを模したレスポンスを返す
+  getBuild: (championKey: number) =>
+    Promise.resolve(
+      championKey === 21
+        ? {
+            championKey: 21,
+            laneLabel: 'Bot',
+            startIds: [1055, 2003],
+            bootsId: 3009,
+            coreIds: [3072, 3009, 6676, 3031, 3036],
+            meta: { winRate: 0.502, games: 4619, tier: 'Emerald+', version: '16.17' },
+          }
+        : null,
+    ),
 }
 
 function emit(s: LiveState) {

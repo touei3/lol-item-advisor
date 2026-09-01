@@ -11,10 +11,22 @@ import type {
   ThreatProfile,
 } from './types'
 
+export type BuildSource = 'deeplol' | 'curated' | 'generic'
+
+/** Deeplol 等から渡す統計ビルドの上書き（アイテムIDで指定）*/
+export interface BuildOverride {
+  startIds: number[]
+  bootsId?: number
+  coreIds: number[]
+  laneLabel?: string
+  meta?: { winRate?: number; games?: number; tier: string; version: string }
+}
+
 export interface Recommendation {
   classification: Classification
   profile: ThreatProfile
-  curated: boolean // チャンピオン個別の手入れビルドか（false=型ベースの汎用）
+  source: BuildSource // ビルドの出どころ
+  buildMeta?: { winRate?: number; games?: number; tier: string; version: string; lane?: string }
   startItems: RecommendedItem[]
   buildOrder: RecommendedItem[] // ブーツ＋コア＋差し込み（最大6枠）
   extraOptions: RecommendedItem[] // 枠に入りきらなかった対抗候補
@@ -38,51 +50,91 @@ function make(
   }
 }
 
+function itemFromId(
+  data: DDragonData,
+  id: number,
+  role: RecommendedItem['role'],
+  reason?: string,
+): RecommendedItem {
+  const item = data.itemById.get(String(id))
+  return {
+    name: item?.name ?? `item:${id}`,
+    displayName: item ? itemDisplayName(data, item) : `#${id}`,
+    role,
+    reason,
+    item,
+  }
+}
+
 export function recommend(
   data: DDragonData,
   myChamp: DDragonChampion,
   enemies: DDragonChampion[],
+  override?: BuildOverride,
 ): Recommendation {
   const classification = classify(myChamp)
   const template = BUILDS[classification.archetype]
   const curatedBuild = CHAMPIONS[myChamp.id]?.build
   const profile = buildThreatProfile(enemies)
 
-  // 個別ビルドがあれば優先、無ければ型ベースの汎用ビルド
-  const startNames = curatedBuild?.start ?? template.startItems
-  const baseBoots = curatedBuild?.boots ?? template.defaultBoots
-  const coreNames = curatedBuild?.core ?? template.core
-  const lateNames = curatedBuild?.late ?? template.late
-  const coreReasons = curatedBuild?.coreReasons ?? template.coreReasons
+  let source: BuildSource
+  let buildMeta: Recommendation['buildMeta']
+  let startItems: RecommendedItem[]
+  let bootsItem: RecommendedItem
+  let coreItems: RecommendedItem[]
+  let lateItems: RecommendedItem[]
 
-  // --- スタートアイテム ---
-  const startItems = startNames.map((n) => make(data, n, 'start'))
+  if (override && override.coreIds.length) {
+    // === Deeplol 統計ビルド ===
+    source = 'deeplol'
+    buildMeta = override.meta
+      ? { ...override.meta, lane: override.laneLabel }
+      : { tier: '', version: '', lane: override.laneLabel }
+    startItems = override.startIds.map((id) => itemFromId(data, id, 'start'))
+    bootsItem =
+      override.bootsId != null
+        ? itemFromId(data, override.bootsId, 'boots', 'Deeplol統計の推奨ブーツ')
+        : make(data, curatedBuild?.boots ?? template.defaultBoots, 'boots', '標準のブーツ')
+    coreItems = override.coreIds.map((id, i) =>
+      itemFromId(data, id, 'core', i === 0 ? 'Deeplol統計のコア（勝率ベース）' : undefined),
+    )
+    lateItems = [] // Deeplol のコアで十分埋まる
+  } else {
+    // === 手書きデータ（個別 or 型ベース汎用）===
+    source = curatedBuild ? 'curated' : 'generic'
+    const startNames = curatedBuild?.start ?? template.startItems
+    const coreNames = curatedBuild?.core ?? template.core
+    const lateNames = curatedBuild?.late ?? template.late
+    const coreReasons = curatedBuild?.coreReasons ?? template.coreReasons
 
-  // --- ブーツ選択 ---
-  // 火力キャリー(ADC/メイジ/アサシン/エンチャンター)は基本ブーツを維持し、防具はアイテムで対応。
-  // 耐久寄り(タンク/ブルーザー)のみ、敵構成に応じて防御ブーツへ差し替える。
-  const tanky =
-    classification.archetype === 'tank' ||
-    classification.archetype === 'tank-support' ||
-    classification.archetype === 'ad-bruiser' ||
-    classification.archetype === 'ap-fighter'
+    startItems = startNames.map((n) => make(data, n, 'start'))
 
-  let bootsName = baseBoots
-  let bootsReason = curatedBuild ? 'このチャンピオンの標準ブーツ' : '標準のブーツ'
-
-  if (tanky) {
-    if (profile.highCC >= 3) {
-      bootsName = template.bootsVsAP // Mercury's Treads
-      bootsReason = '敵のCCが非常に多いためテナシティ重視'
-    } else if (profile.magicRatio >= 0.6 && profile.total >= 2) {
-      bootsName = template.bootsVsAP
-      bootsReason = '敵が魔法寄りのため魔法防御ブーツ'
-    } else if (profile.physicalRatio >= 0.6 && profile.total >= 2) {
-      bootsName = template.bootsVsAD // Plated Steelcaps
-      bootsReason = '敵が物理寄りのため物理防御ブーツ'
+    // ブーツ選択：火力キャリーは基本ブーツ維持、耐久寄りのみ脅威に応じ防御ブーツへ
+    const tanky =
+      classification.archetype === 'tank' ||
+      classification.archetype === 'tank-support' ||
+      classification.archetype === 'ad-bruiser' ||
+      classification.archetype === 'ap-fighter'
+    let bootsName = curatedBuild?.boots ?? template.defaultBoots
+    let bootsReason = curatedBuild ? 'このチャンピオンの標準ブーツ' : '標準のブーツ'
+    if (tanky) {
+      if (profile.highCC >= 3) {
+        bootsName = template.bootsVsAP
+        bootsReason = '敵のCCが非常に多いためテナシティ重視'
+      } else if (profile.magicRatio >= 0.6 && profile.total >= 2) {
+        bootsName = template.bootsVsAP
+        bootsReason = '敵が魔法寄りのため魔法防御ブーツ'
+      } else if (profile.physicalRatio >= 0.6 && profile.total >= 2) {
+        bootsName = template.bootsVsAD
+        bootsReason = '敵が物理寄りのため物理防御ブーツ'
+      }
     }
+    bootsItem = make(data, bootsName, 'boots', bootsReason)
+    coreItems = coreNames.map((n) => make(data, n, 'core', coreReasons?.[n]))
+    lateItems = lateNames.map((n) => make(data, n, 'late'))
   }
 
+  // === 共通：ブーツ→コア→対抗→後半 の順で最大6枠に組む ===
   const used = new Set<string>()
   const buildOrder: RecommendedItem[] = []
   const push = (item: RecommendedItem) => {
@@ -93,18 +145,13 @@ export function recommend(
     return true
   }
 
-  push(make(data, bootsName, 'boots', bootsReason))
+  push(bootsItem)
+  for (const it of coreItems) push(it)
 
-  // --- コア ---
-  for (const n of coreNames) {
-    push(make(data, n, 'core', coreReasons?.[n]))
-  }
-
-  // --- 対抗アイテム（優先度順）---
+  // 対抗アイテム（敵構成に応じた差し込み）
   const counters = counterItems(classification.archetype, profile).sort(
     (a, b) => b.priority - a.priority,
   )
-
   const extraOptions: RecommendedItem[] = []
   for (const c of counters) {
     const item = make(data, c.name, 'counter', c.reason)
@@ -116,20 +163,13 @@ export function recommend(
     }
   }
 
-  // --- 余り枠を後半候補で埋める ---
-  for (const n of lateNames) {
+  // 余り枠を後半候補で埋める
+  for (const it of lateItems) {
     if (buildOrder.length >= TARGET_SLOTS) break
-    push(make(data, n, 'late'))
+    push(it)
   }
 
-  return {
-    classification,
-    profile,
-    curated: !!curatedBuild,
-    startItems,
-    buildOrder,
-    extraOptions,
-  }
+  return { classification, profile, source, buildMeta, startItems, buildOrder, extraOptions }
 }
 
 export interface NextItemResult {
