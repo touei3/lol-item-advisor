@@ -64,4 +64,8 @@ export interface LolBridge {
   setMock: (on: boolean) => void
   /** Deeplol の統計ビルドを取得（失敗時 null）*/
   getBuild: (championKey: number) => Promise<DeeplolBuild | null>
+  /** メニューの「再読み込み」が押されたら呼ばれる。解除関数を返す */
+  onRefreshBuilds: (cb: () => void) => () => void
+  /** キャッシュを消して再取得させる（アプリ内ボタン用。main がクリア後 onRefreshBuilds を発火）*/
+  reloadBuilds: () => void
 }

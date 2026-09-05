@@ -11,4 +11,10 @@ contextBridge.exposeInMainWorld('lol', {
   getState: () => ipcRenderer.invoke('lol:getState') as Promise<LiveState>,
   setMock: (on: boolean) => ipcRenderer.send('lol:setMock', on),
   getBuild: (championKey: number) => ipcRenderer.invoke('lol:getBuild', championKey),
+  onRefreshBuilds: (cb: () => void) => {
+    const listener = () => cb()
+    ipcRenderer.on('lol:refreshBuilds', listener)
+    return () => ipcRenderer.removeListener('lol:refreshBuilds', listener)
+  },
+  reloadBuilds: () => ipcRenderer.send('lol:reloadBuilds'),
 })

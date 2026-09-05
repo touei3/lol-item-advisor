@@ -1,7 +1,7 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import path from 'node:path'
 import type { LiveState } from '../../src/live'
-import { fetchBuild } from './deeplol'
+import { clearBuildCache, fetchBuild } from './deeplol'
 import { fetchChampSelect, isClientRunning } from './lcu'
 import { fetchIngame } from './liveclient'
 import { mockChampSelect, mockIngame } from './mock'
@@ -40,6 +40,53 @@ function createWindow() {
   win.on('closed', () => (win = null))
 }
 
+function reloadBuilds() {
+  clearBuildCache()
+  win?.webContents.send('lol:refreshBuilds')
+}
+
+function buildAppMenu() {
+  const template: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: 'データ',
+      submenu: [
+        {
+          label: 'ビルドデータ(Deeplol)を再読み込み',
+          accelerator: 'CmdOrCtrl+R',
+          click: () => reloadBuilds(),
+        },
+        { type: 'separator' },
+        {
+          label: '画面を再読み込み',
+          accelerator: 'CmdOrCtrl+Shift+R',
+          click: () => win?.webContents.reload(),
+        },
+        {
+          label: '開発者ツール',
+          accelerator: 'F12',
+          click: () => win?.webContents.toggleDevTools(),
+        },
+        { type: 'separator' },
+        { role: 'quit', label: '終了' },
+      ],
+    },
+    {
+      label: '表示',
+      submenu: [
+        { role: 'togglefullscreen', label: 'フルスクリーン切替' },
+        { role: 'minimize', label: '最小化' },
+        {
+          label: '常に最前面',
+          type: 'checkbox',
+          checked: true,
+          click: (item) => win?.setAlwaysOnTop(item.checked, 'screen-saver'),
+        },
+      ],
+    },
+  ]
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+}
+
 async function poll(): Promise<LiveState> {
   if (mock) {
     mockTick++
@@ -75,11 +122,13 @@ function startLoop() {
 app.whenReady().then(() => {
   ipcMain.handle('lol:getState', () => lastState)
   ipcMain.handle('lol:getBuild', (_e, championKey: number) => fetchBuild(championKey))
+  ipcMain.on('lol:reloadBuilds', () => reloadBuilds())
   ipcMain.on('lol:setMock', (_e, on: boolean) => {
     mock = !!on
     mockTick = 0
   })
 
+  buildAppMenu()
   createWindow()
   startLoop()
 

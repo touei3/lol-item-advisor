@@ -12,7 +12,8 @@ import type { DeeplolBuild, LiveState } from '../../src/live'
 import type { DDragonChampion } from '../../src/types'
 
 // Deeplol の統計ビルドを championKey で取得（Electronのbridge経由・失敗時null）
-function useDeeplolBuild(championKey?: number): DeeplolBuild | null {
+// nonce を変えると再取得する（メニューの再読み込み用）
+function useDeeplolBuild(championKey?: number, nonce = 0): DeeplolBuild | null {
   const [build, setBuild] = useState<DeeplolBuild | null>(null)
   useEffect(() => {
     let alive = true
@@ -27,7 +28,7 @@ function useDeeplolBuild(championKey?: number): DeeplolBuild | null {
     return () => {
       alive = false
     }
-  }, [championKey])
+  }, [championKey, nonce])
   return build
 }
 
@@ -35,6 +36,8 @@ export function DesktopApp() {
   const [data, setData] = useState<DDragonData | null>(null)
   const [state, setState] = useState<LiveState>({ phase: 'idle' })
   const [mock, setMock] = useState(false)
+  const [refreshNonce, setRefreshNonce] = useState(0)
+  const [justRefreshed, setJustRefreshed] = useState(false)
   const hasBridge = typeof window !== 'undefined' && !!window.lol
 
   useEffect(() => {
@@ -48,6 +51,28 @@ export function DesktopApp() {
     return off
   }, [hasBridge])
 
+  // メニューの「ビルドデータ再読み込み」を受けてビルドを取り直す
+  useEffect(() => {
+    if (!hasBridge || !window.lol.onRefreshBuilds) return
+    return window.lol.onRefreshBuilds(() => {
+      setRefreshNonce((n) => n + 1)
+      setJustRefreshed(true)
+      setTimeout(() => setJustRefreshed(false), 1800)
+    })
+  }, [hasBridge])
+
+  const doRefresh = () => {
+    if (window.lol?.reloadBuilds) {
+      // main がキャッシュを消して onRefreshBuilds を発火 → 下の購読で nonce 更新
+      window.lol.reloadBuilds()
+    } else {
+      // プレビュー等 bridge 無し時のフォールバック
+      setRefreshNonce((n) => n + 1)
+      setJustRefreshed(true)
+      setTimeout(() => setJustRefreshed(false), 1800)
+    }
+  }
+
   const toggleMock = () => {
     const next = !mock
     setMock(next)
@@ -60,18 +85,34 @@ export function DesktopApp() {
         <div className="flex items-center gap-2">
           <PhaseBadge phase={state.phase} />
           <span className="text-xs font-bold text-slate-200">LoL Item Advisor</span>
+          {justRefreshed && (
+            <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-300">
+              🔄 再読み込みしました
+            </span>
+          )}
         </div>
-        {hasBridge && (
-          <button
-            onClick={toggleMock}
-            className={`rounded px-2 py-0.5 text-[10px] ${
-              mock ? 'bg-amber-500/30 text-amber-200' : 'bg-slate-700 text-slate-300'
-            }`}
-            title="LoLが無くても画面を確認できます"
-          >
-            {mock ? 'モック中' : 'モック'}
-          </button>
-        )}
+        <div className="flex items-center gap-1.5">
+          {hasBridge && (
+            <button
+              onClick={doRefresh}
+              className="rounded bg-slate-700 px-2 py-0.5 text-[10px] text-slate-200 hover:bg-slate-600"
+              title="ビルドデータ(Deeplol)を再取得（メニュー: データ → 再読み込み / Ctrl+R）"
+            >
+              🔄 再読み込み
+            </button>
+          )}
+          {hasBridge && (
+            <button
+              onClick={toggleMock}
+              className={`rounded px-2 py-0.5 text-[10px] ${
+                mock ? 'bg-amber-500/30 text-amber-200' : 'bg-slate-700 text-slate-300'
+              }`}
+              title="LoLが無くても画面を確認できます"
+            >
+              {mock ? 'モック中' : 'モック'}
+            </button>
+          )}
+        </div>
       </header>
 
       <main className="p-3">
@@ -82,9 +123,9 @@ export function DesktopApp() {
         ) : state.phase === 'error' ? (
           <Centered>エラー: {state.message}</Centered>
         ) : state.phase === 'champselect' ? (
-          <ChampSelectView data={data} state={state} />
+          <ChampSelectView data={data} state={state} refreshNonce={refreshNonce} />
         ) : (
-          <IngameView data={data} state={state} />
+          <IngameView data={data} state={state} refreshNonce={refreshNonce} />
         )}
       </main>
     </div>
@@ -130,15 +171,17 @@ function IdleView({ message, hasBridge }: { message?: string; hasBridge: boolean
 function ChampSelectView({
   data,
   state,
+  refreshNonce,
 }: {
   data: DDragonData
   state: Extract<LiveState, { phase: 'champselect' }>
+  refreshNonce: number
 }) {
   const enemies = state.enemyTeamKeys
     .map((k) => championFromKey(data, k))
     .filter((c): c is DDragonChampion => !!c)
   const my = state.myChampionKey ? championFromKey(data, state.myChampionKey) : undefined
-  const build = useDeeplolBuild(state.myChampionKey)
+  const build = useDeeplolBuild(state.myChampionKey, refreshNonce)
 
   const rec = useMemo(
     () => (my ? recommend(data, my, enemies, build ?? undefined) : null),
@@ -169,16 +212,18 @@ function ChampSelectView({
 function IngameView({
   data,
   state,
+  refreshNonce,
 }: {
   data: DDragonData
   state: Extract<LiveState, { phase: 'ingame' }>
+  refreshNonce: number
 }) {
   const my = state.me ? championFromRawName(data, state.me.championId) : undefined
   const enemies = state.enemies
     .map((e) => championFromRawName(data, e.championId))
     .filter((c): c is DDragonChampion => !!c)
   const owned = useMemo(() => new Set(state.me?.itemIds ?? []), [state.me])
-  const build = useDeeplolBuild(my ? Number(my.key) : undefined)
+  const build = useDeeplolBuild(my ? Number(my.key) : undefined, refreshNonce)
 
   const { rec, next, order } = useMemo(() => {
     if (!my) return { rec: null, next: undefined, order: [] as ReturnType<typeof computeNextItem>['order'] }

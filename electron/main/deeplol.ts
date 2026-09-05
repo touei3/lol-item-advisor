@@ -46,6 +46,12 @@ async function getGameVersion(): Promise<string> {
 const buildCache = new Map<string, { value: DeeplolBuild | null; at: number }>()
 const BUILD_TTL = 6 * 3600_000 // 6時間
 
+/** キャッシュを全消去（メニューの再読み込み用）。次回取得で最新パッチ/ビルドを取り直す */
+export function clearBuildCache(): void {
+  buildCache.clear()
+  versionCache = null
+}
+
 function pickLane(buildByLane: Record<string, any>): { lane: string; data: any } | null {
   let best: { lane: string; data: any; games: number } | null = null
   for (const [lane, data] of Object.entries<any>(buildByLane)) {
