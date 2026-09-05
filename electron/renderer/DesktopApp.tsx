@@ -8,6 +8,7 @@ import {
   type DDragonData,
 } from '../../src/ddragon'
 import { computeNextItem, recommend } from '../../src/recommend'
+import { resolveRunes, type ResolvedRunes } from '../../src/runes'
 import type { DeeplolBuild, LiveState } from '../../src/live'
 import type { DDragonChampion } from '../../src/types'
 
@@ -187,6 +188,7 @@ function ChampSelectView({
     () => (my ? recommend(data, my, enemies, build ?? undefined) : null),
     [data, my, enemies, build],
   )
+  const runes = useMemo(() => resolveRunes(data, build?.runes), [data, build])
 
   return (
     <div className="flex flex-col gap-3">
@@ -203,7 +205,77 @@ function ChampSelectView({
           自分のチャンピオンを確定すると、敵構成に合わせたビルドとカウンターを表示します
         </p>
       )}
+      {runes && <RunesPanel runes={runes} />}
       {rec && <BuildResult version={data.version} rec={rec} />}
+    </div>
+  )
+}
+
+// ===== おすすめルーン（ピック画面）=====
+function RunesPanel({ runes }: { runes: ResolvedRunes }) {
+  return (
+    <div className="rounded-xl bg-slate-800/40 p-3 ring-1 ring-slate-700">
+      <h3 className="mb-2 text-sm font-bold text-violet-300">おすすめルーン（Deeplol）</h3>
+      <div className="flex flex-col gap-2">
+        {/* メインツリー */}
+        <div className="flex items-center gap-2">
+          {runes.primaryStyle && (
+            <img
+              src={runes.primaryStyle.iconUrl}
+              title={runes.primaryStyle.name}
+              className="h-5 w-5 shrink-0"
+            />
+          )}
+          {runes.keystone && (
+            <img
+              src={runes.keystone.iconUrl}
+              title={runes.keystone.name}
+              className="h-10 w-10 rounded-full bg-slate-900 ring-2 ring-violet-400"
+            />
+          )}
+          <div className="flex gap-1.5">
+            {runes.primary.map((r) => (
+              <img
+                key={r.id}
+                src={r.iconUrl}
+                title={r.name}
+                className="h-8 w-8 rounded-full bg-slate-900/60"
+              />
+            ))}
+          </div>
+        </div>
+        {/* サブツリー */}
+        <div className="flex items-center gap-2">
+          {runes.secondaryStyle && (
+            <img
+              src={runes.secondaryStyle.iconUrl}
+              title={runes.secondaryStyle.name}
+              className="h-5 w-5 shrink-0 opacity-80"
+            />
+          )}
+          <div className="flex gap-1.5">
+            {runes.secondary.map((r) => (
+              <img
+                key={r.id}
+                src={r.iconUrl}
+                title={r.name}
+                className="h-7 w-7 rounded-full bg-slate-900/60"
+              />
+            ))}
+          </div>
+          {/* シャード */}
+          <div className="ml-auto flex flex-wrap gap-1">
+            {runes.shards.map((s, i) => (
+              <span
+                key={i}
+                className="rounded bg-slate-700/70 px-1.5 py-0.5 text-[9px] text-slate-200"
+              >
+                {s.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

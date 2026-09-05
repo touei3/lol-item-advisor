@@ -87,12 +87,20 @@ export async function fetchBuild(championKey: number): Promise<DeeplolBuild | nu
       return null
     }
 
+    const rune = b0.rune
     const build: DeeplolBuild = {
       championKey,
       laneLabel: picked.lane,
       startIds: Array.isArray(b0.start_item?.build) ? b0.start_item.build : [],
       bootsId: typeof b0.boots?.item === 'number' ? b0.boots.item : undefined,
       coreIds: Array.isArray(b0.item?.build) ? b0.item.build : [],
+      runes: rune
+        ? {
+            main: Array.isArray(rune.main_build) ? rune.main_build : [],
+            sub: Array.isArray(rune.sub_build) ? rune.sub_build : [],
+            stat: Array.isArray(rune.stat_build) ? rune.stat_build : [],
+          }
+        : undefined,
       meta: {
         winRate: picked.data.win_rate,
         games: picked.data.games,

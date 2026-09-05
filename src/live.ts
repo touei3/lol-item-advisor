@@ -46,6 +46,8 @@ export interface DeeplolBuild {
   startIds: number[]
   bootsId?: number
   coreIds: number[]
+  // ルーン（ID配列）: main=[パス, キーストーン, 副1, 副2, 副3], sub=[パス, 副1, 副2], stat=[攻/汎/防シャード]
+  runes?: { main: number[]; sub: number[]; stat: number[] }
   meta: {
     winRate?: number
     games?: number

@@ -15,6 +15,19 @@ export interface DDragonChampion {
   image: { full: string }
 }
 
+export interface RuneInfo {
+  id: number
+  name: string
+  icon: string // "perk-images/Styles/..." （非バージョンのimg配下）
+  styleId: number
+}
+
+export interface RuneStyleInfo {
+  id: number
+  name: string
+  icon: string
+}
+
 export interface DDragonItem {
   id: string // 数値ID 文字列
   name: string

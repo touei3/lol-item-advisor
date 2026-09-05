@@ -27,6 +27,11 @@ let cb: ((s: LiveState) => void) | null = null
             startIds: [1055, 2003],
             bootsId: 3009,
             coreIds: [3072, 3009, 6676, 3031, 3036],
+            runes: {
+              main: [8000, 8005, 8009, 9103, 8014],
+              sub: [8300, 8345, 8304],
+              stat: [5005, 5008, 5001],
+            },
             meta: { winRate: 0.502, games: 4619, tier: 'Emerald+', version: '16.17' },
           }
         : null,

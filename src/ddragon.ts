@@ -1,4 +1,4 @@
-import type { DDragonChampion, DDragonItem } from './types'
+import type { DDragonChampion, DDragonItem, RuneInfo, RuneStyleInfo } from './types'
 
 const BASE = 'https://ddragon.leagueoflegends.com'
 const LOCALE = 'ja_JP'
@@ -16,6 +16,9 @@ export interface DDragonData {
   itemById: Map<string, DDragonItem>
   // アイテムID → 日本語表示名
   itemNameJa: Map<string, string>
+  // ルーン（個別）ID → 情報 / ルーンツリー（パス）ID → 情報
+  runeById: Map<number, RuneInfo>
+  runeStyleById: Map<number, RuneStyleInfo>
 }
 
 /** 表記ゆれを吸収するためのキー正規化 */
@@ -40,10 +43,11 @@ export async function loadDDragon(): Promise<DDragonData> {
   const version = versions[0]
 
   // チャンピオンとアイテム日本語名は ja_JP、ビルド雛形の名前解決には en_US を使う
-  const [champRes, itemEnRes, itemJaRes] = await Promise.all([
+  const [champRes, itemEnRes, itemJaRes, runesRes] = await Promise.all([
     fetch(`${BASE}/cdn/${version}/data/${LOCALE}/champion.json`).then((r) => r.json()),
     fetch(`${BASE}/cdn/${version}/data/en_US/item.json`).then((r) => r.json()),
     fetch(`${BASE}/cdn/${version}/data/${LOCALE}/item.json`).then((r) => r.json()),
+    fetch(`${BASE}/cdn/${version}/data/${LOCALE}/runesReforged.json`).then((r) => r.json()),
   ])
 
   const champions: DDragonChampion[] = Object.values(champRes.data)
@@ -76,8 +80,36 @@ export async function loadDDragon(): Promise<DDragonData> {
     if (!itemByName.has(key)) itemByName.set(key, it)
   }
 
-  cache = { version, champions, championById, championByKey, items, itemByName, itemById, itemNameJa }
+  // ルーン（runesReforged: パス配列 → slots → runes）
+  const runeById = new Map<number, RuneInfo>()
+  const runeStyleById = new Map<number, RuneStyleInfo>()
+  for (const style of runesRes as any[]) {
+    runeStyleById.set(style.id, { id: style.id, name: style.name, icon: style.icon })
+    for (const slot of style.slots || []) {
+      for (const r of slot.runes || []) {
+        runeById.set(r.id, { id: r.id, name: r.name, icon: r.icon, styleId: style.id })
+      }
+    }
+  }
+
+  cache = {
+    version,
+    champions,
+    championById,
+    championByKey,
+    items,
+    itemByName,
+    itemById,
+    itemNameJa,
+    runeById,
+    runeStyleById,
+  }
   return cache
+}
+
+/** ルーン/ルーンツリーのアイコンURL（icon は "perk-images/..." 形式、非バージョン）*/
+export function runeIconUrl(icon: string): string {
+  return `${BASE}/cdn/img/${icon}`
 }
 
 /** LCU/Live Client のチャンピオン識別子から DDragon チャンピオンを引く */
